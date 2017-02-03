@@ -63,6 +63,9 @@
             // Whether to hide empty segments of chart or not
             hideEmptySegments: false,
 
+            minZoom: 0.1,
+            maxZoom: 10.0,
+
             // Whether to show color gradients or not
             showColorGradients: false,
 
@@ -109,6 +112,162 @@
             this.initData(this.options.data);
             this.createArcElements();
             this.updateViewBox();
+
+this.exportAsImage();
+        },
+
+        exportAsImage: function () {
+
+            var that = this;
+
+            function copyStylesInline(destinationNode, sourceNode) {
+                var containerElements = ['svg', 'g'];
+
+                for (var cd = 0; cd < destinationNode.childNodes.length; ++cd) {
+                    var child = destinationNode.childNodes[cd];
+
+                    if (containerElements.indexOf(child.tagName) !== -1) {
+                        copyStylesInline(child, sourceNode.childNodes[cd]);
+                        continue;
+                    }
+
+                    var computedStyle = window.getComputedStyle(sourceNode.childNodes[cd], null);
+
+//                    var computedStyle = sourceNode.childNodes[cd].currentStyle
+//                        || ((sourceNode.childNodes[cd] instanceof Element) && window.getComputedStyle(sourceNode.childNodes[cd]));
+
+                    if (computedStyle === 'undefined' || computedStyle === null) {
+                        continue;
+                    }
+
+                    for (var i = 0; i < computedStyle.length; ++i) {
+                        var style = computedStyle[i];
+
+                        child.style.setProperty(style, computedStyle.getPropertyValue(style));
+                    }
+                }
+            }
+
+            function triggerDownload (imgURI, fileName) {
+                var evt = new MouseEvent('click', {
+                    view: window,
+                    bubbles: false,
+                    cancelable: true
+                });
+
+                var a = document.createElement('a');
+
+                a.setAttribute('download', fileName);
+                a.setAttribute('href', imgURI);
+                a.setAttribute('target', '_blank');
+                a.dispatchEvent(evt);
+            }
+
+            function calculateViewBox(svg, area)
+            {
+                // Get bounding boxes
+                var svgBoundingBox    = area.getBBox();
+                var clientBoundingBox = area.getBoundingClientRect();
+
+                // View box should have at least the same width/height as the parent element
+                var viewBoxWidth  = Math.max(clientBoundingBox.width, svgBoundingBox.width);
+                var viewBoxHeight = Math.max(clientBoundingBox.height, svgBoundingBox.height, that.options.minHeight);
+
+                // Calculate offset to center chart inside svg
+                var offsetX = (viewBoxWidth - svgBoundingBox.width) / 2;
+                var offsetY = (viewBoxHeight - svgBoundingBox.height) / 2;
+
+                // Adjust view box dimensions by padding and offset
+                var viewBoxLeft = Math.ceil(svgBoundingBox.x - offsetX - that.options.padding);
+                var viewBoxTop  = Math.ceil(svgBoundingBox.y - offsetY - that.options.padding);
+
+                // Final width/height of view box
+                viewBoxWidth  = Math.ceil(viewBoxWidth + (that.options.padding * 2));
+                viewBoxHeight = Math.ceil(viewBoxHeight + (that.options.padding * 2));
+
+                // Return calculated view box
+                return [
+                    viewBoxLeft,
+                    viewBoxTop,
+                    viewBoxWidth,
+                    viewBoxHeight
+                ];
+            }
+
+            function svgToImage(svg, area, width, height) {
+
+                // Works with latest Chrome, Firefox
+                // -> Not with FF 45.0.2
+
+
+var fileName = 'test.png';
+
+                var newSvg = svg.cloneNode(true);
+//                var copy   = area.cloneNode(true);
+//                newSvg.appendChild(copy);
+
+//console.log(newSvg);
+
+                copyStylesInline(newSvg, svg);
+
+                var canvas = document.createElement('canvas');
+                var bbox   = area.getBoundingClientRect();
+
+                newSvg.setAttribute('width', bbox.width);
+                newSvg.setAttribute('height', bbox.height);
+                newSvg.setAttribute('viewBox', calculateViewBox(newSvg, area));
+
+//                $('#fan_chart').append(newSvg);
+
+//console.log(area.getBBox());
+//console.log(area.getBoundingClientRect());
+//console.log(svg.getBBox());
+//console.log(svg.getBoundingClientRect());
+
+                canvas.width  = Math.ceil(bbox.width);
+                canvas.height = Math.ceil(bbox.height);
+
+                var ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+//                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                var data    = (new XMLSerializer()).serializeToString(newSvg);
+                var DOMURL  = window.URL || window.webkitURL || window;
+                var svgBlob = new Blob([ data ], { type: 'image/svg+xml;charset=utf-8' });
+                var url     = DOMURL.createObjectURL(svgBlob);
+                var img     = new Image();
+
+                img.onload = function () {
+                    ctx.drawImage(img, 0, 0);
+
+                    DOMURL.revokeObjectURL(url);
+
+                    if ((typeof navigator !== 'undefined') && navigator.msSaveOrOpenBlob) {
+                        var blob = canvas.msToBlob();
+                        navigator.msSaveOrOpenBlob(blob, fileName);
+                    } else {
+                        var imgURI = canvas
+                            .toDataURL('image/png')
+                            .replace('image/png', 'image/octet-stream');
+
+                        triggerDownload(imgURI, fileName);
+                    }
+
+//                  document.removeChild(canvas);
+                };
+
+                img.src = url;
+            }
+
+//            this.config.svg.attr('viewBox', [
+//                -809, -445, this.config.width, this.config.height
+//            ]);
+
+
+            svgToImage(this.config.svg.node(), this.config.visual.node()); //, this.config.width, this.config.height);
         },
 
         /**
@@ -139,7 +298,7 @@
             var that = this;
 
             this.config.zoom = d3.zoom()
-                .scaleExtent([0.5, 5.0])
+                .scaleExtent([ this.options.minZoom, this.options.maxZoom ])
                 .on('zoom', $.proxy(this.doZoom, this));
 
             this.config.zoom.filter(function () {
@@ -147,13 +306,13 @@
                 if (d3.event.type === 'wheel') {
                     if (that.config.zoomLevel && d3.event.ctrlKey) {
                         // Prevent zooming below lowest level
-                        if ((that.config.zoomLevel <= 0.5) && (d3.event.deltaY > 0)) {
+                        if ((that.config.zoomLevel <= that.options.minZoom) && (d3.event.deltaY > 0)) {
                             d3.event.preventDefault();
                             return false;
                         }
 
                         // Prevent zooming above highest level
-                        if ((that.config.zoomLevel >= 5.0) && (d3.event.deltaY < 0)) {
+                        if ((that.config.zoomLevel >= that.options.maxZoom) && (d3.event.deltaY < 0)) {
                             d3.event.preventDefault();
                             return false;
                         }
@@ -184,6 +343,10 @@
                 .attr('height', '100%')
                 .attr('text-rendering', 'geometricPrecision')
                 .attr('text-anchor', 'middle')
+                .style('font' , '12px tahoma, arial, helvetica, sans-serif')
+                .style('-webkit-filter', 'drop-shadow(3px 1px 3px rgba(0, 0, 0, 0.4))')
+                .style('filter', 'drop-shadow(3px 1px 3px rgba(0, 0, 0, 0.4))')
+
                 .on('contextmenu', function () {
                     d3.event.preventDefault();
                 })
@@ -227,7 +390,9 @@
                 .append('rect')
                 .attr('class', 'background')
                 .attr('width', '100%')
-                .attr('height', '100%');
+                .attr('height', '100%')
+                .style('fill', 'none')
+                .style('pointer-events', 'all');
 
             // Bind click event on reset button
             var $resetButton = $(this.config.parent.node())
@@ -597,6 +762,9 @@
 
             var path = arcGroup
                 .append('path')
+//                .style('fill', 'rgb(240, 240, 240)')
+//                .style('stroke', 'rgb(225, 225, 225)')
+//                .style('stroke-width', '2px')
                 .attr('d', arcGen);
 
             // Hide arc initially if its new during chart update
