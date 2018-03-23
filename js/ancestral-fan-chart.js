@@ -917,9 +917,8 @@
                 .selectAll('g.person')
                 .on('click', null);
 
-            d3.json(
-                this.options.updateUrl + d.data.xref,
-                function (data) {
+            d3.json(this.options.updateUrl + d.data.xref, { credentials: 'include' })
+                .then(function (data) {
                     // Initialize the new loaded data
                     that.initData(data);
 
