@@ -233,12 +233,18 @@ class Chart extends ChartController
         $fatherTree = $this->buildJsonTree($family->getHusband(), $generation + 1);
         $motherTree = $this->buildJsonTree($family->getWife(), $generation + 1);
 
+        $marriageYear = Filter::unescapeHtml($family->getMarriageDate()->display());
+
         // Add array of child nodes
         if ($fatherTree) {
+            $fatherTree['marriage'] = $marriageYear;
+
             $data['children'][] = $fatherTree;
         }
 
         if ($motherTree) {
+            $motherTree['marriage'] = $marriageYear;
+
             $data['children'][] = $motherTree;
         }
 

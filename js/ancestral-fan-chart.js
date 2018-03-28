@@ -86,6 +86,7 @@
         _create: function () {
             this.options.startPi = -(this.options.fanDegree / 360 * Math.PI);
             this.options.endPi   = (this.options.fanDegree / 360 * Math.PI);
+            this.options.endPi   = (-90 / 360 * Math.PI);
 
             // Helper method to create a ongoing id
             this.options.id = (function (reset) {
@@ -667,24 +668,32 @@
 
                 // Create a path for each line of text as mobile devices
                 // won't display <tspan> elements in the right position
-                let path1 = this.appendPathToLabel(label, 0, d);
-                let path2 = this.appendPathToLabel(label, 1, d);
+                let path0 = this.appendPathToLabel(label, 0, d);
+                let path1 = this.appendPathToLabel(label, 1, d);
+                let path2 = this.appendPathToLabel(label, 2, d);
 
-                this.appendTextPath(text, path1.attr('id'))
-                    .text(this.getFirstNames(d))
+                this.appendTextPath(text, path0.attr('id'))
+                    .attr('class', 'date')
+                    .text(this.getMarriage(d))
                     .each(this.truncate(d, 0));
 
-                this.appendTextPath(text, path2.attr('id'))
-                    .text(this.getLastName(d))
+                this.appendTextPath(text, path1.attr('id'))
+                    .attr('class', 'name')
+                    .text(this.getFirstNames(d))
                     .each(this.truncate(d, 1));
 
+                this.appendTextPath(text, path2.attr('id'))
+                    .attr('class', 'name')
+                    .text(this.getLastName(d))
+                    .each(this.truncate(d, 2));
+
                 if (timeSpan) {
-                    let path3 = this.appendPathToLabel(label, 2, d);
+                    let path3 = this.appendPathToLabel(label, 3, d);
 
                     this.appendTextPath(text, path3.attr('id'))
-                        .attr('class', 'chart-date')
+                        .attr('class', 'date')
                         .text(timeSpan)
-                        .each(this.truncate(d, 2));
+                        .each(this.truncate(d, 3));
                 }
             } else {
                 // Outer labels
@@ -698,17 +707,17 @@
 
                 // Create the text elements for first name, last name and
                 // the birth/death dates
-                that.appendOuterArcText(d, label, name);
+                that.appendOuterArcText(d, label, name, 'name');
 
                 // The outer most circles show the complete name and do not distinguish between
                 // first name, last name and dates
                 if (d.depth < 7) {
                     // Add last name
-                    that.appendOuterArcText(d, label, that.getLastName(d));
+                    that.appendOuterArcText(d, label, that.getLastName(d), 'name');
 
                     // Add dates
                     if ((d.depth < 6) && timeSpan) {
-                        that.appendOuterArcText(d, label, timeSpan, 'chart-date');
+                        that.appendOuterArcText(d, label, timeSpan, 'date');
                     }
                 }
 
@@ -1113,7 +1122,7 @@
          * @return {int}
          */
         getTextOffset: function(index, d) {
-            return this.isPositionFlipped(d) ? [25, 43, 71][index] : [66, 48, 20][index];
+            return this.isPositionFlipped(d) ? [5, 25, 43, 71][index] : [86, 66, 48, 20][index];
         },
 
         /**
@@ -1194,6 +1203,17 @@
          */
         getLastName: function (d) {
             return d.data.name.substr(d.data.name.lastIndexOf(' ') + 1);
+        },
+
+        /**
+         * Get the marriage date.
+         *
+         * @param {object} d D3 data object
+         *
+         * @return {string}
+         */
+        getMarriage: function (d) {
+            return d.data.marriage ? d.data.marriage : null;
         },
 
         /**

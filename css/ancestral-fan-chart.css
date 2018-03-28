@@ -23,10 +23,6 @@
     cursor: -webkit-grabbing;
 }
 
-#page-fan svg text {
-    font-weight: bold;
-}
-
 #page-fan svg .person.available {
     cursor: pointer;
 }
@@ -53,7 +49,11 @@
     font-weight: normal;
 }
 
-#page-fan svg .label .chart-date {
+#page-fan svg .label .name {
+    font-weight: bold;
+}
+
+#page-fan svg .label .date {
     fill: #7f7f7f;
     font-weight: normal;
 }
