@@ -44,7 +44,7 @@ use \Fisharebest\Webtrees\Theme;
                 </tr>
 
                 <tr>
-                    <td class="descriptionbox" rowspan="2">
+                    <td class="descriptionbox" rowspan="3">
                         <?php echo $this->translate('Layout') ?>
                     </td>
                     <td class="optionbox">
@@ -57,6 +57,17 @@ use \Fisharebest\Webtrees\Theme;
                         <input type="submit" value="<?php echo $this->translate('view') ?>">
                     </td>
                 </tr>
+	            <tr>
+                    <td class="optionbox">
+                        <label>
+                            <?php echo $this->getShowCompletedCheckbox() ?>
+                            <?php echo $this->translate('completed') ?>
+                        </label>
+                    </td>
+                    <td class="topbottombar vmiddle" colspan="2">
+
+                    </td>
+	            </tr>
                 <tr>
                     <td class="optionbox">
                         <label>

@@ -99,6 +99,7 @@ class Chart extends ChartController
      * @var bool
      */
     private $showColorGradients = false;
+    private $showCompleted      = false;
 
     /**
      * Constructor.
@@ -116,6 +117,7 @@ class Chart extends ChartController
         $this->fontScale          = Filter::getInteger('fontScale', 0, 200, 100);
         $this->hideEmptySegments  = Filter::getBool('hideEmptySegments');
         $this->showColorGradients = Filter::getBool('showColorGradients');
+		$this->showCompleted      = Filter::getBool('showCompleted');
 
         // Create page title
         $title = $this->translate('Ancestral fan chart');
@@ -188,6 +190,41 @@ class Chart extends ChartController
     }
 
     /**
+     * Get a symbol based on the presence of a media for the event : ° to BIRT or CHR, + to DEAT or BURI and x to MARR
+     *
+     * @param Individual $person Individual instance
+     * @param string $event_type 
+     *
+     * @return string symbol
+     */
+    private function findEventMedia(Individual $person = null, $event_type = WT_EVENTS_BIRT)
+    {
+        if (preg_match_all('/\n1 (?:' . $event_type . ').*(?:\n[2-9].*)*(?:\n2 OBJE (.+))/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER))
+        {
+            if (($event_type == 'BIRT') || ($event_type == 'CHR')) {
+                return '°';
+            } elseif (($event_type == 'DEAT') || ($event_type == 'BURI')) {
+                return '+';
+            }
+        }
+        if ($event_type == 'FAMS')
+        {
+            if (preg_match_all('/\n1 (?:' . $event_type . ').*/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER)) {
+                foreach ($person->getSpouseFamilies() as $family) {
+                    if ($family->getFirstFact('MARR')) {
+                        if ($family->getFirstFact('OBJE')) {
+                            return 'x';
+                        }
+                    }
+                    
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Get the individual data required for display the chart.
      *
      * @param Individual $person     Start person
@@ -210,6 +247,10 @@ class Chart extends ChartController
             'sex'             => $person->getSex(),
             'born'            => $person->getBirthYear(),
             'died'            => $person->getDeathYear(),
+            'lifespan'        => $person->getLifeSpan(),
+            'mediaborn'       => $this->findEventMedia($person, 'BIRT').$this->findEventMedia($person, 'CHR'),
+            'mediamarr'       => $this->findEventMedia($person, 'FAMS'),
+            'mediadied'       => $this->findEventMedia($person, 'DEAT').$this->findEventMedia($person, 'BURI'),
             'color'           => $this->getColor($person),
             'colors'          => [[], []],
         );
@@ -284,6 +325,16 @@ class Chart extends ChartController
     private function getShowColorGradientsCheckbox()
     {
         return FunctionsEdit::twoStateCheckbox('showColorGradients', $this->showColorGradients);
+    }
+
+    /**
+     * Get the HTML for the "showCompleted" checkbox element.
+     *
+     * @return string
+     */
+    private function getShowCompletedCheckbox()
+    {
+        return FunctionsEdit::twoStateCheckbox('showCompleted', $this->showCompleted);
     }
 
     /**
@@ -409,6 +460,7 @@ class Chart extends ChartController
                 'fontColor'          => $this->getChartFontColor(),
                 'hideEmptySegments'  => $this->hideEmptySegments,
                 'showColorGradients' => $this->showColorGradients,
+                'showCompleted'      => $this->showCompleted,
                 'updateUrl'          => $this->getUpdateUrl(),
                 'individualUrl'      => $this->getIndividualUrl(),
                 'data'               => $this->buildJsonTree($this->root),

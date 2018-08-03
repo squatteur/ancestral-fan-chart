@@ -66,6 +66,9 @@
             // Whether to show color gradients or not
             showColorGradients: false,
 
+            // Whether to show completed or not
+            showCompleted: false,
+
             // Duration of update animation if clicked on a person
             updateDuration: 1250,
 
@@ -218,6 +221,12 @@
                 // Create the svg:defs element
                 this.config.svgDefs = this.config.svg
                     .append('defs');
+            }
+
+            if (this.options.showCompleted) {
+                // Create the svg:defs element
+                this.config.svgDefs = this.config.svg
+                    .append('completed');
             }
 
             // Add an overlay with tooltip
@@ -564,11 +573,16 @@
          * @return {void}
          */
         addTitleToPerson: function (person, d) {
+            var that = this;
             person
                 .insert('title', ':first-child')
                 .text(function () {
                     // Return name or remove empty title element
-                    return (d.data.xref !== '') ? d.data.name : this.remove();
+                    if (that.options.showCompleted) {
+                        return (d.data.xref !== '') ? d.data.name + ' ' + d.data.mediaborn + ' ' + d.data.mediamarr + ' ' + d.data.mediadied : this.remove();
+                    } else {
+                        return (d.data.xref !== '') ? d.data.name : this.remove();
+                    }
                 });
         },
 
@@ -668,6 +682,7 @@
                 // Inner labels
                 let text     = this.appendTextToLabel(label, d);
                 let timeSpan = this.getTimeSpan(d);
+				let objectFind = that.getObjectFind(d);
 
                 // Create a path for each line of text as mobile devices
                 // won't display <tspan> elements in the right position
@@ -681,7 +696,12 @@
                 this.appendTextPath(text, path2.attr('id'))
                     .text(this.getLastName(d))
                     .each(this.truncate(d, 1));
-
+                if ((objectFind == '° x +') && that.options.showCompleted) {
+                    label = label
+                    .style('fill', function (d) {
+                        return 'rgb(151, 75, 162)';
+                    });
+                }
                 if (d.data.alternativeName) {
                     let path3 = this.appendPathToLabel(label, 2, d);
 
@@ -693,23 +713,35 @@
                 }
 
                 if (timeSpan) {
-                    let path4 = this.appendPathToLabel(label, 3, d);
+					let path4 = this.appendPathToLabel(label, 3, d);
 
-                    this.appendTextPath(text, path4.attr('id'))
+                        this.appendTextPath(text, path4.attr('id'))
+                            .attr('class', 'date')
+                            .text(timeSpan)
+                            .each(this.truncate(d, 3));
+                    if (that.options.showCompleted) {
+                        let path5 = this.appendPathToLabel(label, 4, d);
+                        this.appendTextPath(text, path5.attr('id'))
                         .attr('class', 'date')
-                        .text(timeSpan)
-                        .each(this.truncate(d, 3));
+                        .text(objectFind);
+                    }
                 }
             } else {
                 // Outer labels
                 let name     = d.data.name;
                 let timeSpan = that.getTimeSpan(d);
+                let objectFind = that.getObjectFind(d);
 
                 // Return first name for inner circles
                 if (d.depth < 7) {
                     name = that.getFirstNames(d);
                 }
-
+                if ((objectFind == '° x +') && that.options.showCompleted) {
+                    label = label
+                    .style('fill', function (d) {
+                        return 'rgb(151, 75, 162)';
+                    });
+                }
                 // Create the text elements for first name, last name and
                 // the birth/death dates
                 that.appendOuterArcText(d, 0, label, name);
@@ -730,8 +762,13 @@
 
                     // Add dates
                     if ((d.depth < 6) && timeSpan) {
-                        that.appendOuterArcText(d, 3, label, timeSpan, 'date');
+                        if (that.options.showCompleted) {
+                            that.appendOuterArcText(d, 3, label, objectFind + ' ' + timeSpan, 'date');
+                        } else {
+                            that.appendOuterArcText(d, 3, label, timeSpan, 'date');
+                        }
                     }
+
                 }
 
                 // Rotate outer labels in right position
@@ -1136,7 +1173,7 @@
          */
         getTextOffset: function(index, d) {
             // TODO
-            return this.isPositionFlipped(d) ? [20, 35, 58, 81][index] : [75, 60, 37, 14][index];
+            return this.isPositionFlipped(d) ? [20, 35, 58, 81, 66][index] : [75, 60, 37, 14, 30][index];
         },
 
         /**
@@ -1228,11 +1265,30 @@
          * @return {string}
          */
         getTimeSpan: function (d) {
+            let age;
             if (d.data.born || d.data.died) {
-                return d.data.born + '-' + d.data.died;
+                if (d.data.born && d.data.died) {
+                    age = Number(d.data.died) - Number(d.data.born);
+                    age = ' : ' + age + ' ans';
+                }
+                else age = '';
+                //
+                return d.data.born + '-' + d.data.died + ' ' + age;
             }
 
             return null;
+        },
+
+        /**
+         * Get if bitrhdate's media, deatdate's media and weddingdate's media is present of an person. Returns '  ' if label
+         * should not be displayed due empty data.
+         *
+         * @param {object} d D3 data object
+         *
+         * @return {string}
+         */
+        getObjectFind: function (d) {
+            return d.data.mediaborn + ' ' + d.data.mediamarr + ' ' + d.data.mediadied;
         },
 
         /**
