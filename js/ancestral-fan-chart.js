@@ -696,12 +696,14 @@
                 this.appendTextPath(text, path2.attr('id'))
                     .text(this.getLastName(d))
                     .each(this.truncate(d, 1));
+
                 if ((objectFind == '° x +') && that.options.showCompleted) {
                     label = label
                     .style('fill', function (d) {
                         return 'rgb(151, 75, 162)';
                     });
                 }
+
                 if (d.data.alternativeName) {
                     let path3 = this.appendPathToLabel(label, 2, d);
 
@@ -725,6 +727,13 @@
                         .attr('class', 'date')
                         .text(objectFind);
                     }
+
+                    let path4 = this.appendPathToLabel(label, 3, d);
+
+                    this.appendTextPath(text, path4.attr('id'))
+                        .attr('class', 'date')
+                        .text(timeSpan)
+                        .each(this.truncate(d, 3));
                 }
             } else {
                 // Outer labels
@@ -767,8 +776,8 @@
                         } else {
                             that.appendOuterArcText(d, 3, label, timeSpan, 'date');
                         }
+                        that.appendOuterArcText(d, 3, label, timeSpan, 'date');
                     }
-
                 }
 
                 // Rotate outer labels in right position
