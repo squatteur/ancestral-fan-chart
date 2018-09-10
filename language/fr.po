@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ancestral fan chart\n"
 "POT-Creation-Date: 2018-02-12 10:56+0100\n"
-"PO-Revision-Date: 2018-03-29 21:28+0200\n"
+"PO-Revision-Date: 2018-08-15 01:59+0200\n"
 "Last-Translator: Rico Sonntag <mail@ricosonntag.de>\n"
 "Language-Team: \n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.0.5\n"
+"X-Generator: Poedit 2.0.8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-KeywordsList: translate;doShowTooltipOverlay\n"
 "X-Poedit-SearchPath-0: js/ancestral-fan-chart.js\n"
@@ -84,20 +84,24 @@ msgstr "Taille de police"
 
 #: src/View/form.phtml:48
 msgid "Layout"
-msgstr ""
+msgstr "Visible"
 
 #: src/View/form.phtml:53
 msgid "Show color gradients"
-msgstr ""
+msgstr "Afficher le dégradé de couleur"
 
 #: src/View/form.phtml:57
 msgid "view"
 msgstr "afficher"
 
 #: src/View/form.phtml:64
-msgid "Hide empty segments"
-msgstr ""
+msgid "Show individuals with 3 media"
+msgstr "Montrer les individus avec 3 medias"
 
-#: src/View/form.phtml:68
+#: src/View/form.phtml:75
+msgid "Hide empty segments"
+msgstr "Cacher les cases vides"
+
+#: src/View/form.phtml:79
 msgid "reset"
 msgstr "réinitialiser"
