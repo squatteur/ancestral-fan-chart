@@ -728,8 +728,6 @@
                         .text(objectFind);
                     }
 
-                    let path4 = this.appendPathToLabel(label, 3, d);
-
                     this.appendTextPath(text, path4.attr('id'))
                         .attr('class', 'date')
                         .text(timeSpan)
