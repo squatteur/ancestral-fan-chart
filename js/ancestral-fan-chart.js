@@ -5,7 +5,7 @@
 /**
  * Webtrees module.
  *
- * Copyright (C) 2017  Rico Sonntag
+ * Copyright (C) 2017  Baestel Squatteur
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -689,6 +689,13 @@
                 let path1 = this.appendPathToLabel(label, 0, d);
                 let path2 = this.appendPathToLabel(label, 1, d);
 
+                if ((objectFind == '° x +') && that.options.showCompleted) {
+                    label = label
+                    .style('fill', function (d) {
+                        return 'rgb(151, 75, 162)';
+                    });
+                }
+
                 this.appendTextPath(text, path1.attr('id'))
                     .text(this.getFirstNames(d))
                     .each(this.truncate(d, 0));
@@ -696,13 +703,6 @@
                 this.appendTextPath(text, path2.attr('id'))
                     .text(this.getLastName(d))
                     .each(this.truncate(d, 1));
-
-                if ((objectFind == '° x +') && that.options.showCompleted) {
-                    label = label
-                    .style('fill', function (d) {
-                        return 'rgb(151, 75, 162)';
-                    });
-                }
 
                 if (d.data.alternativeName) {
                     let path3 = this.appendPathToLabel(label, 2, d);
@@ -717,21 +717,17 @@
                 if (timeSpan) {
 					let path4 = this.appendPathToLabel(label, 3, d);
 
-                        this.appendTextPath(text, path4.attr('id'))
-                            .attr('class', 'date')
-                            .text(timeSpan)
-                            .each(this.truncate(d, 3));
+                    this.appendTextPath(text, path4.attr('id'))
+                        .attr('class', 'date')
+                        .text(timeSpan)
+                        .each(this.truncate(d, 3));
+
                     if (that.options.showCompleted) {
                         let path5 = this.appendPathToLabel(label, 4, d);
                         this.appendTextPath(text, path5.attr('id'))
                         .attr('class', 'date')
                         .text(objectFind);
                     }
-
-                    this.appendTextPath(text, path4.attr('id'))
-                        .attr('class', 'date')
-                        .text(timeSpan)
-                        .each(this.truncate(d, 3));
                 }
             } else {
                 // Outer labels
@@ -768,12 +764,18 @@
                     }
 
                     // Add dates
-                    if ((d.depth < 6) && timeSpan) {
+                    if ((d.depth === 5) && timeSpan) {
                         if (that.options.showCompleted) {
                             that.appendOuterArcText(d, 3, label, objectFind + ' ' + timeSpan, 'date');
                         } else {
                             that.appendOuterArcText(d, 3, label, timeSpan, 'date');
                         }
+                    }
+
+                    if ((d.depth < 5) && timeSpan) { // en dessous du 5e niveau, on affiche sur deux lignes (plus joli) 
+                        if (that.options.showCompleted) {
+                            that.appendOuterArcText(d, 3, label, objectFind);
+                        } 
                         that.appendOuterArcText(d, 3, label, timeSpan, 'date');
                     }
                 }
