@@ -73,6 +73,7 @@ class Chart extends ChartController
      */
     private $showColorGradients = false;
     private $showCompleted      = false;
+    private $showCompletedParam = 0;
 
     /**
      * Constructor.
@@ -90,7 +91,8 @@ class Chart extends ChartController
         $this->fontScale          = Filter::getInteger('fontScale', 0, 200, 100);
         $this->hideEmptySegments  = Filter::getBool('hideEmptySegments');
         $this->showColorGradients = Filter::getBool('showColorGradients');
-		$this->showCompleted      = Filter::getBool('showCompleted');
+        $this->showCompleted      = Filter::getBool('showCompleted');
+        $this->showCompletedParam = Filter::get('showCompletedParam');        
 
         // Create page title
         $title = $this->translate('Ancestral fan chart');
@@ -163,37 +165,116 @@ class Chart extends ChartController
     }
 
     /**
+     * Get the processed individual.
+     *
+     * @param Individual $person Individual instance
+     *
+     * @return bool Processed Individual
+     */
+    private function getProcessed(Individual $person = null)
+    {
+        if ($person instanceof Individual) {
+
+            if (($this->findEventMedia($person, 'BIRT', $this->showCompletedParam) || $this->findEventMedia($person, 'CHR', $this->showCompletedParam) || $this->findEventMedia($person, 'BAPM', $this->showCompletedParam))
+            && ($this->findEventMedia($person, 'FAMS', $this->showCompletedParam))
+            && (($this->findEventMedia($person, 'DEAT', $this->showCompletedParam) || $this->findEventMedia($person, 'BURI', $this->showCompletedParam)) || !$person->isDead()) )
+            {
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
+    
+    /**
      * Get a symbol based on the presence of a media for the event : ° to BIRT or CHR, + to DEAT or BURI and x to MARR
      *
      * @param Individual $person Individual instance
-     * @param string $event_type 
+     * @param string $event_type
+     * @param string $type
      *
      * @return string symbol
      */
-    private function findEventMedia(Individual $person = null, $event_type = WT_EVENTS_BIRT)
+    private function findEventMedia(Individual $person = null, $event_type = WT_EVENTS_BIRT, $type)
     {
-        if (preg_match_all('/\n1 (?:' . $event_type . ').*(?:\n[2-9].*)*(?:\n2 OBJE (.+))/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER))
+        if ($type == 0) // DATE
         {
-            if (($event_type == 'BIRT') || ($event_type == 'CHR')) {
-                return '°';
-            } elseif (($event_type == 'DEAT') || ($event_type == 'BURI')) {
-                return '+';
+            if (($event_type == 'BIRT') || ($event_type == 'CHR') || ($event_type == 'BAPM')) {
+                if ($person->getBirthDate()->isOK())
+                {
+                    return '°'; 
+                }
+            }
+            if (($event_type == 'DEAT') || ($event_type == 'BURI')) {
+                if ($person->getDeathDate()->isOK())
+                {
+                    return '+'; 
+                }
+            }
+            if ($event_type == 'FAMS')
+            {
+                if (preg_match_all('/\n1 (?:' . $event_type . ').*/', $person->getGedcom(), $ged_date, PREG_SET_ORDER)) {
+                    foreach ($person->getSpouseFamilies() as $family) {
+                        if ($family->getFirstFact('MARR')) {
+                            if ($family->getMarriageDate()!=NULL) {
+                                return 'x';
+                            }
+                        }
+                        
+                    }
+                }
             }
         }
-        if ($event_type == 'FAMS')
+        if ($type == 1) // OBJE
         {
-            if (preg_match_all('/\n1 (?:' . $event_type . ').*/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER)) {
-                foreach ($person->getSpouseFamilies() as $family) {
-                    if ($family->getFirstFact('MARR')) {
-                        if ($family->getFirstFact('OBJE')) {
-                            return 'x';
+            if (preg_match_all('/\n1 (?:' . $event_type . ').*(?:\n[2-9].*)*(?:\n2 OBJE (.+))/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER))
+            {
+                if (($event_type == 'BIRT') || ($event_type == 'CHR') || ($event_type == 'BAPM')) {
+                    return '°';
+                } elseif (($event_type == 'DEAT') || ($event_type == 'BURI') || (!$person->isDead()))
+                {
+                    return '+';
+                }
+            }
+            if ($event_type == 'FAMS')
+            {
+                if (preg_match_all('/\n1 (?:' . $event_type . ').*/', $person->getGedcom(), $ged_obje, PREG_SET_ORDER)) {
+                    foreach ($person->getSpouseFamilies() as $family) {
+                        if ($family->getFirstFact('MARR')) {
+                            if ($family->getFirstFact('OBJE')) {
+                                return 'x';
+                            }
                         }
+                        
                     }
-                    
                 }
             }
         }
 
+        if ($type == 2) // SOURCE
+        {
+            if (preg_match_all('/\n1 (?:' . $event_type . ').*(?:\n[2-9].*)*(?:\n2 SOUR (.+))/', $person->getGedcom(), $ged_sour, PREG_SET_ORDER))
+            {
+                if (($event_type == 'BIRT') || ($event_type == 'CHR') || ($event_type == 'BAPM')) {
+                    return '°';
+                } elseif (($event_type == 'DEAT') || ($event_type == 'BURI') || (!$person->isDead()))
+                {
+                    return '+';
+                }
+            }
+            if ($event_type == 'FAMS')
+            {
+                if (preg_match_all('/\n1 (?:' . $event_type . ').*/', $person->getGedcom(), $ged_sour, PREG_SET_ORDER)) {
+                    foreach ($person->getSpouseFamilies() as $family) {
+                        if ($family->getFirstFact('MARR')) {
+                            if ($family->getFirstFact('SOUR')) {
+                                return 'x';
+                            }
+                        }
+                        
+                    }
+                }
+            }
+        }
         return '';
     }
 
@@ -221,9 +302,10 @@ class Chart extends ChartController
             'born'            => $person->getBirthYear(),
             'died'            => $person->getDeathYear(),
             'lifespan'        => $person->getLifeSpan(),
-            'mediaborn'       => $this->findEventMedia($person, 'BIRT').$this->findEventMedia($person, 'CHR'),
-            'mediamarr'       => $this->findEventMedia($person, 'FAMS'),
-            'mediadied'       => $this->findEventMedia($person, 'DEAT').$this->findEventMedia($person, 'BURI'),
+            'mediaborn'       => $this->getBirthSymbol($person, $this->showCompletedParam),
+            'mediamarr'       => $this->getMarriageSymbol($person, $this->showCompletedParam),
+            'mediadied'       => $this->getDeathSymbol($person, $this->showCompletedParam),
+            'processed'       => $this->getProcessed($person),
             'color'           => $this->getColor($person),
             'colors'          => [[], []],
         );
@@ -311,6 +393,18 @@ class Chart extends ChartController
     }
 
     /**
+     * Get the HTML for the "showCompletedParam" checkbox element.
+     *
+     * @return string
+     */
+    private function getShowCompletedParamSelectControl()
+    {
+        return FunctionsEdit::selectEditControl(
+            'showCompletedParam', $this->getShowCompletedParam(), null, $this->showCompletedParam
+        );
+    }
+
+    /**
      * Get the HTML for the "fanDegree" selection form control element.
      *
      * @return string
@@ -358,6 +452,65 @@ class Chart extends ChartController
     private function getChartFontColor()
     {
         return '#' . $this->getTheme()->parameter('chart-font-color');
+    }
+
+    /**
+     * A list of options for the chart degrees.
+     *
+     * @return string[]
+     */
+    private function getShowCompletedParam()
+    {
+        return [
+            0 => 'DATE',
+            1 => 'OBJE',
+            2 => 'SOUR',
+        ];
+    }
+
+    /**
+     * Get the birth symbol
+     *
+     * @return string[]
+     */
+    private function getBirthSymbol($person)
+    {
+        if ($this->findEventMedia($person, 'BIRT', $this->showCompletedParam) == '°' || $this->findEventMedia($person, 'CHR', $this->showCompletedParam) == '°' || $this->findEventMedia($person, 'BAPM', $this->showCompletedParam) == '°')
+        {
+            return '°';
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Get the marriage symbol
+     *
+     * @return string[]
+     */
+    private function getMarriageSymbol($person)
+    {
+        if ($this->findEventMedia($person, 'FAMS', $this->showCompletedParam) == 'x')
+        {
+            return 'x';
+        } else {
+            return '';
+        }
+    }
+    
+    /**
+     * Get the marriage symbol
+     *
+     * @return string[]
+     */
+    private function getDeathSymbol($person)
+    {
+        if (($this->findEventMedia($person, 'DEAT', $this->showCompletedParam) == '+') || ($this->findEventMedia($person, 'BURI', $this->showCompletedParam) == '+'))
+        {
+            return '+';
+        } else {
+            return '';
+        }
     }
 
     /**
@@ -434,6 +587,7 @@ class Chart extends ChartController
                 'hideEmptySegments'  => $this->hideEmptySegments,
                 'showColorGradients' => $this->showColorGradients,
                 'showCompleted'      => $this->showCompleted,
+                'showCompletedParam' => $this->showCompletedParam,
                 'updateUrl'          => $this->getUpdateUrl(),
                 'individualUrl'      => $this->getIndividualUrl(),
                 'data'               => $this->buildJsonTree($this->root),

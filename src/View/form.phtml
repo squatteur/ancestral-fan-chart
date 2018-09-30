@@ -62,11 +62,14 @@ use \Fisharebest\Webtrees\Theme;
                     <td class="optionbox">
                         <label>
                             <?php echo $this->getShowCompletedCheckbox() ?>
-                            <?php echo $this->translate('Show individuals with 3 media') ?>
+                            <?php echo $this->translate('Show individuals with 3 medias or sources') ?>
                         </label>
                     </td>
-                    <td class="topbottombar vmiddle" colspan="2">
-
+                    <td class="descriptionbox">
+                        <label for="showCompletedParam"><?php echo 'Type' ?></label>
+                    </td>
+                    <td class="optionbox">
+                        <?php echo $this->getShowCompletedParamSelectControl() ?>
                     </td>
 	            </tr>
                 <tr>

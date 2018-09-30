@@ -5,7 +5,7 @@
 /**
  * Webtrees module.
  *
- * Copyright (C) 2017  Baestel Squatteur
+ * Copyright (C) 2017  Rico Sonntag
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -689,7 +689,7 @@
                 let path1 = this.appendPathToLabel(label, 0, d);
                 let path2 = this.appendPathToLabel(label, 1, d);
 
-                if ((objectFind == '° x +') && that.options.showCompleted) {
+                if (d.data.processed && that.options.showCompleted) {
                     label = label
                     .style('fill', function (d) {
                         return 'rgb(151, 75, 162)';
@@ -739,7 +739,7 @@
                 if (d.depth < 7) {
                     name = that.getFirstNames(d);
                 }
-                if ((objectFind == '° x +') && that.options.showCompleted) {
+                if (d.data.processed && that.options.showCompleted) {
                     label = label
                     .style('fill', function (d) {
                         return 'rgb(151, 75, 162)';
