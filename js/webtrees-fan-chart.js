@@ -217,11 +217,9 @@
                 this.config.svg.classed('rtl', true);
             }
 
-            if (this.options.showColorGradients) {
-                // Create the svg:defs element
-                this.config.svgDefs = this.config.svg
-                    .append('defs');
-            }
+            // Create the svg:defs element
+            this.config.svgDefs = this.config.svg
+                .append('defs');
 
             if (this.options.showCompleted) {
                 // Create the svg:defs element
@@ -686,8 +684,8 @@
 
                 // Create a path for each line of text as mobile devices
                 // won't display <tspan> elements in the right position
-                let path1 = this.appendPathToLabel(label, 0, d);
-                let path2 = this.appendPathToLabel(label, 1, d);
+                let pathId1 = this.appendPathToLabel(label, 0, d);
+                let pathId2 = this.appendPathToLabel(label, 1, d);
 
                 if (d.data.processed && that.options.showCompleted) {
                     label = label
@@ -696,18 +694,19 @@
                     });
                 }
 
-                this.appendTextPath(text, path1.attr('id'))
+                this.appendTextPath(text, pathId1.attr('id'))
+
                     .text(this.getFirstNames(d))
                     .each(this.truncate(d, 0));
 
-                this.appendTextPath(text, path2.attr('id'))
+                this.appendTextPath(text, pathId2)
                     .text(this.getLastName(d))
                     .each(this.truncate(d, 1));
 
                 if (d.data.alternativeName) {
-                    let path3 = this.appendPathToLabel(label, 2, d);
+                    let pathId3 = this.appendPathToLabel(label, 2, d);
 
-                    this.appendTextPath(text, path3.attr('id'))
+                    this.appendTextPath(text, pathId3)
                         .attr('class', 'alternativeName')
                         .classed('rtl', d.data.isAltRtl)
                         .text(d.data.alternativeName)
@@ -715,16 +714,16 @@
                 }
 
                 if (timeSpan) {
-					let path4 = this.appendPathToLabel(label, 3, d);
+                    let pathId4 = this.appendPathToLabel(label, 3, d);
 
-                    this.appendTextPath(text, path4.attr('id'))
+                    this.appendTextPath(text, pathId4)
                         .attr('class', 'date')
                         .text(timeSpan)
                         .each(this.truncate(d, 3));
 
                     if (that.options.showCompleted) {
-                        let path5 = this.appendPathToLabel(label, 4, d);
-                        this.appendTextPath(text, path5.attr('id'))
+                        let pathId5 = this.appendPathToLabel(label, 4, d);
+                        this.appendTextPath(text, pathId5.attr('id'))
                         .attr('class', 'date')
                         .text(objectFind);
                     }
@@ -1345,11 +1344,18 @@
          * @param {int}    index Index position of element in parent container. Required to create a unique path id.
          * @param {object} d     D3 data object
          *
-         * @return {object} D3 path object
+         * @return {string} Path id
          */
-        appendPathToLabel: function (label, index, d) {
+        appendPathToLabel: function (label, index, d)
+        {
             var that     = this;
             var personId = d3.select(label.node().parentNode).attr('id');
+            var pathId   = "path-" + personId + "-" + index;
+
+            // If definition already exists return the existing path id
+            if (this.config.svgDefs.select("path#" + pathId).node()) {
+                return pathId;
+            }
 
             // Create arc generator for path segments
             var arcGenerator = d3.arc()
@@ -1370,10 +1376,12 @@
                     return that.relativeRadius(d, that.getTextOffset(index, d));
                 });
 
-            // Append a path so we could use it to write the label along it
-            return label.append('path')
-                .attr('id', personId + '-' + index)
-                .attr('d', arcGenerator);
+            this.config.svgDefs
+                .append("path")
+                .attr("id", pathId)
+                .attr("d", arcGenerator);
+
+            return pathId;
         },
 
         /**
